@@ -159,10 +159,25 @@ button:hover{
         padding: 36px 18px;
     }
 
-    .serie input{
-        max-width: 150px;
+    .serie{
+        grid-template-columns: 1fr 1fr;
     }
 
+}
+
+@media(max-width:400px){
+    .container {
+        padding: 25px 12px;
+    }
+
+    .serie{
+        grid-template-columns: 1fr;
+    }
+
+    .serie input,
+    .serie select{
+        min-width:0;
+    }
 }
 
 img{
@@ -289,6 +304,28 @@ img{
     color: #3a82fe;
     font-weight: bold;
 }
+
+.intro {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 25px;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.intro p {
+    margin-bottom: 12px;
+}
+
+.intro p:last-child {
+    margin-bottom: 0;
+}
+
+.intro strong {
+    color: #fff;
+}
 </style>
 </head>
 
@@ -299,6 +336,16 @@ img{
     <div class="title">
         <img src="favicon.svg" alt="Icono del sitio" onerror="this.style.display='none'">
         <h1>Workout Tracker</h1>
+    </div>
+
+    <div class="intro">
+        <p><strong>¿Qué es la sobrecarga progresiva?</strong> Es el principio fundamental del entrenamiento de fuerza: para seguir ganando músculo y fuerza, debes exponer al músculo a una tensión cada vez mayor de forma controlada y planificada. Esta herramienta te ayuda a calcular, registrar y proyectar esa progresión.</p>
+
+        <p><strong>Ciclo de 5 semanas:</strong> La app sigue una estructura de 3 fases — <strong>Acumulación (semanas 1–3):</strong> aumentas repeticiones manteniendo el peso. <strong>Intensificación (semana 4):</strong> subes el peso (5–10%) y las reps bajan naturalmente. <strong>Descarga (semana 5):</strong> reduces un 40% el volumen para recuperarte y llegar fresco al siguiente ciclo.</p>
+
+        <p><strong>Métricas clave:</strong> <strong>Volumen Total</strong> (peso × repeticiones reales) — el trabajo efectivo que hiciste. <strong>Volumen Estimado</strong> (peso × repeticiones válidas, incluyendo las que podrías haber hecho según el RIR). <strong>1RM Máximo</strong> — tu mejor repetición máxima estimada del día. <strong>1RM Promedio</strong> — el promedio entre todas las series. <strong>Intensidad Promedio</strong> — qué tan cerca del fallo trabajaste (en porcentaje). El <strong>RIR</strong> son las repeticiones que dejaste en reserva (cuántas más podrías haber hecho). El <strong>RPE</strong> es la percepción del esfuerzo del 1 al 10.</p>
+
+        <p><strong>¿Qué deberías guardar?</strong> Apunta en tu cuaderno o notas: el <strong>1RM Máximo</strong> (tu mejor marca del día), el <strong>Volumen Total</strong> (carga real levantada), la <strong>Intensidad Promedio</strong> y la <strong>proyección de la próxima sesión</strong>. Así podrás ver tu evolución semana a semana y ajustar las cargas con datos reales.</p>
     </div>
 
     <div class="section-title">
