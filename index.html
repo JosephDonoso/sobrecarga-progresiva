@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg" href="favicon.svg">
+<title>Workout Tracker</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:30px;
+
+    background:
+    linear-gradient(135deg,#0f172a,#1e293b,#334155);
+}
+
+.container{
+    width:100%;
+    max-width:900px;
+
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(15px);
+
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:24px;
+
+    padding:35px;
+    color:white;
+
+    box-shadow:
+    0 20px 40px rgba(0,0,0,.3);
+}
+
+h1{
+    text-align:center;
+    font-size:2rem;
+}
+
+.section-title{
+    margin-bottom:12px;
+    font-size:1.1rem;
+    font-weight:600;
+}
+
+.paragraph{
+    margin-bottom:12px;
+    font-size:0.8rem;
+    font-weight:600;
+}
+
+.input-main{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    margin-bottom:25px;
+
+    background:rgba(255,255,255,.12);
+    color:white;
+}
+
+.input-main::placeholder{
+    color:rgba(255,255,255,.7);
+}
+
+/* Regla para que las opciones del select global se vean oscuras y legibles */
+.input-main option {
+    color: black;
+}
+
+.series-list{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    margin-bottom:25px;
+}
+
+.serie{
+    display:grid;
+    grid-template-columns:
+    1fr
+    1fr
+    120px
+    1fr;
+
+    gap:10px;
+}
+
+.serie input,
+.serie select{
+    padding:12px;
+    border:none;
+    border-radius:10px;
+
+    background:rgba(255,255,255,.12);
+    color:white;
+}
+
+.serie input::placeholder{
+    color:rgba(255,255,255,.7);
+}
+
+.serie select option{
+    color:black;
+}
+
+.controls{
+    display:flex;
+    gap:10px;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+
+    padding:12px 18px;
+    border-radius:12px;
+
+    font-weight:600;
+    transition:.25s;
+}
+
+.btn-add{
+    background:#22c55e;
+    color:white;
+}
+
+.btn-remove{
+    background:#ef4444;
+    color:white;
+}
+
+.btn-calc{
+    background:#3a82fe;
+    color:white;
+}
+
+button:hover{
+    transform:translateY(-2px);
+    opacity:.9;
+}
+
+@media(max-width:700px){
+    body {
+        padding-inline: 0px;
+    }
+
+    .container {
+        padding: 36px 18px;
+    }
+
+    .serie input{
+        max-width: 150px;
+    }
+
+}
+
+img{
+ width: 54px;
+ height: 54px;   
+}
+
+.title {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* --- ESTILOS DE LA CARD DE RESULTADOS --- */
+
+.result-card {
+    margin-top: 30px;
+    padding: 25px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    display: none; 
+}
+
+.result-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 8px;
+}
+
+/* --- ESTILOS DEL MEDIDOR DE INTENSIDAD --- */
+.gauge-wrapper {
+    margin-top: 30px;
+}
+
+.gauge-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.gauge-container {
+    width: 100%;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    position: relative;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+    overflow: hidden; 
+}
+
+.gauge-track {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    background: linear-gradient(to right, 
+        #3b82f6 0%,      /* Resistencia (Azul) */
+        #22c55e 68%,     /* Hipertrofia (Verde) */
+        #eab308 75%,     /* Hipertrofia-Fuerza (Amarillo) */
+        #f97316 85%,     /* Fuerza (Naranja) */
+        #ef4444 92%,     /* Fuerza Máxima (Rojo) */
+        #7f1d1d 100%     /* Extremo */
+    );
+}
+
+.gauge-fill-mask {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%; 
+    background: rgba(0, 0, 0, 0.6); 
+    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gauge-target-text {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.target-highlight {
+    color: #3a82fe;
+    font-size: 1.2rem;
+    display: block;
+    margin-top: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="title">
+        <img src="favicon.svg" alt="Icono del sitio" onerror="this.style.display='none'">
+        <h1>Workout Tracker</h1>
+    </div>
+
+    <div class="section-title">
+        Nombre del ejercicio
+    </div>
+
+    <input
+        type="text"
+        class="input-main"
+        placeholder="Ej: Press banca, Sentadilla, Peso muerto..."
+    >
+
+    <div class="section-title">
+        Series Relizadas
+    </div>
+
+    <div class="paragraph">
+        RIR: Repeticiones antes de llegar al fallo.
+        <br>
+        RPE: Escala de percepción del esfuerzo percibida (del 1 al 10)
+    </div>
+
+    <div id="seriesList" class="series-list"></div>
+
+    <div class="section-title">
+        Fase planificada para tu próxima sesión
+    </div>
+
+    <select class="input-main" id="faseProximaSesion">
+        <option value="acumulacion">Acumulación (aumento del 2 al 5% de volumen de entrenamiento)</option>
+        <option value="intensidad">Intensidad (aumento del 5 al 10% del peso)</option>
+        <option value="descarga">Descarga (disminución del 30 al 40% del peso y repeticiones)</option>
+    </select>
+
+    <div class="controls">
+        <button class="btn-add" onclick="agregarSerie()">
+            + Serie
+        </button>
+
+        <button class="btn-remove" onclick="eliminarSerie()">
+            - Serie
+        </button>
+
+        <button class="btn-calc" onclick="calcularProgresion()">
+            Calcular
+        </button>
+    </div>
+
+    <div id="resultCard" class="result-card">
+        <div class="section-title" style="text-align: center; margin-bottom: 20px;">
+            Resumen del Ejercicio
+        </div>
+        
+        <div class="result-item">
+            <span>Volumen Total (Peso x Reps):</span> 
+            <strong id="volumenTot">0.0 kg</strong>
+        </div>
+        <div class="result-item">
+            <span>Volumen Estimado (Peso x RV):</span> 
+            <strong id="volumenEst">0.0 kg</strong>
+        </div>
+        <div class="result-item">
+            <span>1RM Máximo:</span> 
+            <strong id="maxOneRM">0.0 kg</strong>
+        </div>
+        <div class="result-item">
+            <span>1RM Promedio:</span> 
+            <strong id="promOneRM">0.0 kg</strong>
+        </div>
+
+        <div class="gauge-wrapper">
+            <div class="gauge-labels">
+                <span>0%</span>
+                <span>68%</span>
+                <span>75%</span>
+                <span>85%</span>
+                <span>92%</span>
+                <span>100%</span>
+            </div>
+            
+            <div class="gauge-container">
+                <div class="gauge-track"></div>
+                <div id="gaugeMask" class="gauge-fill-mask"></div>
+            </div>
+
+            <div class="gauge-target-text">
+                Intensidad Promedio: <span id="intensidadValue">0.0%</span>
+                <span id="objetivoValue" class="target-highlight">---</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+const lista = document.getElementById("seriesList");
+const resultCard = document.getElementById("resultCard");
+const gaugeMask = document.getElementById("gaugeMask");
+
+let cantSeries, volumen, volumenV, maxEOneRM, promEOneRM, intensidadPromPonderada;
+
+function crearSerie(numero){
+    const fila = document.createElement("div");
+    fila.className = "serie";
+    fila.innerHTML = `
+        <input type="number" placeholder="Serie ${numero} - Peso (kg)">
+        <input type="number" placeholder="Repeticiones">
+        <select>
+            <option value="RIR">RIR</option>
+            <option value="RPE">RPE</option>
+        </select>
+        <input type="number" placeholder="Valor" min="0" max="10" step="0.5">
+    `;
+    return fila;
+}
+
+function agregarSerie(){
+    const cantidad = document.querySelectorAll(".serie").length + 1;
+    lista.appendChild(crearSerie(cantidad));
+}
+
+function eliminarSerie(){
+    const series = document.querySelectorAll(".serie");
+    if(series.length > 1){
+        series[series.length - 1].remove();
+    }
+}
+
+function calcularProgresion() {
+    const series = document.querySelectorAll(".serie");
+    const dataSeries = [...series].map(serie => {
+        const inputs = serie.querySelectorAll("input");
+        const select = serie.querySelector("select");
+        const peso = Number(inputs[0].value) || 0;
+        const reps = Number(inputs[1].value) || 0;
+        const valor = Number(inputs[2].value) || 0;
+
+        let RIR = (select.value === "RIR") ? valor : (10 - valor);
+        const RV = reps + RIR;
+        
+        let eOneRM = (RV > 0) ? peso / (1.0278 - (0.0278 * RV)) : 0;
+        let intensidad = (eOneRM > 0) ? (peso / eOneRM) * 100 : 0;
+
+        return { peso, reps, RIR, RV, eOneRM, intensidad };
+    });
+
+    cantSeries = dataSeries.length;
+    let sumIntensidadXReps = 0;
+    let sumReps = 0;
+    volumen = 0; volumenV = 0; maxEOneRM = 0; promEOneRM = 0;
+
+    dataSeries.forEach(serie => {
+        volumen += serie.peso * serie.reps;
+        volumenV += serie.peso * serie.RV;
+        promEOneRM += serie.eOneRM;
+        if (maxEOneRM < serie.eOneRM) maxEOneRM = serie.eOneRM;
+        sumIntensidadXReps += serie.intensidad * serie.reps;
+        sumReps += serie.reps;
+    });
+
+    intensidadPromPonderada = (sumReps > 0) ? (sumIntensidadXReps / sumReps) : 0;
+    promEOneRM = (cantSeries > 0) ? (promEOneRM / cantSeries) : 0;
+
+    actualizarInterfazResultados();
+}
+
+function actualizarInterfazResultados() {
+    resultCard.style.display = "block";
+    
+    setTimeout(() => {
+        resultCard.classList.add('show');
+    }, 10);
+
+    document.getElementById('volumenTot').textContent = `${volumen.toFixed(1)} kg`;
+    document.getElementById('volumenEst').textContent = `${volumenV.toFixed(1)} kg`;
+    document.getElementById('maxOneRM').textContent = `${maxEOneRM.toFixed(1)} kg`;
+    document.getElementById('promOneRM').textContent = `${promEOneRM.toFixed(1)} kg`;
+    document.getElementById('intensidadValue').textContent = `${intensidadPromPonderada.toFixed(1)}%`;
+
+    const objEl = document.getElementById('objetivoValue');
+    let objetivoTexto = "";
+    let colorObjetivo = "";
+
+    if (intensidadPromPonderada < 68) {
+        objetivoTexto = "Resistencia / Acondicionamiento"; colorObjetivo = "#3b82f6";
+    } else if (intensidadPromPonderada >= 68 && intensidadPromPonderada < 75) {
+        objetivoTexto = "Predominio Hipertrofia"; colorObjetivo = "#22c55e";
+    } else if (intensidadPromPonderada >= 75 && intensidadPromPonderada < 85) {
+        objetivoTexto = "Hipertrofia - Fuerza"; colorObjetivo = "#eab308";
+    } else if (intensidadPromPonderada >= 85 && intensidadPromPonderada < 92) {
+        objetivoTexto = "Fuerza"; colorObjetivo = "#f97316";
+    } else {
+        objetivoTexto = "Fuerza Máxima"; colorObjetivo = "#ef4444";
+    }
+
+    objEl.textContent = `Objetivo: ${objetivoTexto}`;
+    objEl.style.color = colorObjetivo;
+    
+    let percentageToShow = Math.min(Math.max(intensidadPromPonderada, 0), 100);
+    let maskWidth = 100 - percentageToShow;
+
+    gaugeMask.style.transition = 'none';
+    gaugeMask.style.width = '100%';
+    
+    void gaugeMask.offsetWidth; 
+
+    gaugeMask.style.transition = 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    gaugeMask.style.width = `${maskWidth}%`;
+}
+
+// Inicializar con 4 series
+for(let i=1;i<=4;i++){
+    agregarSerie();
+}
+
+</script>
+
+</body>
+</html>
