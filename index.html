@@ -74,7 +74,6 @@ h1{
     color:rgba(255,255,255,.7);
 }
 
-/* Regla para que las opciones del select global se vean oscuras y legibles */
 .input-main option {
     color: black;
 }
@@ -181,8 +180,6 @@ img{
     margin-bottom: 30px;
 }
 
-/* --- ESTILOS DE LA CARD DE RESULTADOS --- */
-
 .result-card {
     margin-top: 30px;
     padding: 25px;
@@ -210,7 +207,6 @@ img{
     padding-bottom: 8px;
 }
 
-/* --- ESTILOS DEL MEDIDOR DE INTENSIDAD --- */
 .gauge-wrapper {
     margin-top: 30px;
 }
@@ -239,12 +235,12 @@ img{
     height: 100%;
     border-radius: 14px;
     background: linear-gradient(to right, 
-        #3b82f6 0%,      /* Resistencia (Azul) */
-        #22c55e 68%,     /* Hipertrofia (Verde) */
-        #eab308 75%,     /* Hipertrofia-Fuerza (Amarillo) */
-        #f97316 85%,     /* Fuerza (Naranja) */
-        #ef4444 92%,     /* Fuerza Máxima (Rojo) */
-        #7f1d1d 100%     /* Extremo */
+        #3b82f6 0%,      
+        #22c55e 68%,     
+        #eab308 75%,     
+        #f97316 85%,     
+        #ef4444 92%,     
+        #7f1d1d 100%     
     );
 }
 
@@ -271,6 +267,28 @@ img{
     display: block;
     margin-top: 5px;
 }
+
+/* --- ESTILOS PRÓXIMA SESIÓN --- */
+.next-session-container {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+}
+
+.next-session-box {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 15px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.stat-highlight {
+    color: #3a82fe;
+    font-weight: bold;
+}
 </style>
 </head>
 
@@ -294,7 +312,7 @@ img{
     >
 
     <div class="section-title">
-        Series Relizadas
+        Series realizadas
     </div>
 
     <div class="paragraph">
@@ -310,9 +328,9 @@ img{
     </div>
 
     <select class="input-main" id="faseProximaSesion">
-        <option value="acumulacion">Acumulación (aumento del 2 al 5% de volumen de entrenamiento)</option>
-        <option value="intensidad">Intensidad (aumento del 5 al 10% del peso)</option>
-        <option value="descarga">Descarga (disminución del 30 al 40% del peso y repeticiones)</option>
+        <option value="acumulacion">Acumulación (Progresión autorregulada en repeticiones)</option>
+        <option value="intensidad">Intensidad (Aumento del 5 al 10% del peso)</option>
+        <option value="descarga">Descarga (Disminución del 40% del volumen)</option>
     </select>
 
     <div class="controls">
@@ -370,6 +388,14 @@ img{
                 Intensidad Promedio: <span id="intensidadValue">0.0%</span>
                 <span id="objetivoValue" class="target-highlight">---</span>
             </div>
+        </div>
+
+        <div class="next-session-container">
+            <div class="section-title">
+                Proyección Próxima Sesión
+            </div>
+            <div id="proximaSesionResult" class="next-session-box">
+                </div>
         </div>
     </div>
 
@@ -431,19 +457,75 @@ function calcularProgresion() {
     cantSeries = dataSeries.length;
     let sumIntensidadXReps = 0;
     let sumReps = 0;
+    let sumPeso = 0;
+    let sumRIR = 0;
+    
     volumen = 0; volumenV = 0; maxEOneRM = 0; promEOneRM = 0;
 
     dataSeries.forEach(serie => {
+        sumPeso += serie.peso;
         volumen += serie.peso * serie.reps;
         volumenV += serie.peso * serie.RV;
         promEOneRM += serie.eOneRM;
         if (maxEOneRM < serie.eOneRM) maxEOneRM = serie.eOneRM;
         sumIntensidadXReps += serie.intensidad * serie.reps;
         sumReps += serie.reps;
+        sumRIR += serie.RIR;
     });
 
     intensidadPromPonderada = (sumReps > 0) ? (sumIntensidadXReps / sumReps) : 0;
     promEOneRM = (cantSeries > 0) ? (promEOneRM / cantSeries) : 0;
+    
+    let pesoPromedio = cantSeries > 0 ? (sumPeso / cantSeries) : 0;
+    let repsPromedio = cantSeries > 0 ? (sumReps / cantSeries) : 0;
+    let rirPromedio = cantSeries > 0 ? (sumRIR / cantSeries) : 0;
+
+    // --- CÁLCULO DE LA PRÓXIMA SESIÓN ---
+    const faseSeleccionada = document.getElementById("faseProximaSesion").value;
+    let htmlProxima = "";
+
+    if(faseSeleccionada === "acumulacion") {
+        let targetPeso = Math.round(pesoPromedio);
+        
+        // Lógica propuesta: si el RIR promedio de la sesión actual es mayor a 2, sumamos 2 reps. Si no, solo 1 rep.
+        let incremento = (rirPromedio > 2) ? 2 : 1;
+        let targetReps = Math.round(repsPromedio) + incremento;
+
+        htmlProxima = `
+            <strong style="color: #22c55e; font-size: 1.05rem;">Fase de Acumulación</strong><br>
+            Mantendrás <strong>${cantSeries} series</strong>. Se ha calculado una sobrecarga progresiva autorregulada según tu fatiga actual:<br><br>
+            Peso: <span class="stat-highlight">${targetPeso} kg</span> | 
+            Repeticiones: <span class="stat-highlight">${targetReps} por serie</span><br><br>
+            <span style="font-size: 0.8rem; color: #aaa;">Nota: El objetivo se adaptará sesión a sesión sumando repeticiones de manera segura.</span>
+        `;
+    } 
+    else if(faseSeleccionada === "intensidad") {
+        let pesoMin = Math.round(pesoPromedio * 1.05);
+        let pesoMax = Math.round(pesoPromedio * 1.10);
+
+        htmlProxima = `
+            <strong style="color: #ef4444; font-size: 1.05rem;">Fase de Intensificación</strong><br>
+            Es hora de desafiar tu sistema nervioso aumentando la carga de trabajo.<br><br>
+            El nuevo peso objetivo debe estar en el rango de:<br>
+            <span class="stat-highlight">${pesoMin} kg — ${pesoMax} kg</span><br><br>
+            <span style="font-size: 0.8rem; color: #aaa;">Nota: Las repeticiones bajarán de forma natural. Asegúrate de mantener un margen seguro de esfuerzo.</span>
+        `;
+    } 
+    else if(faseSeleccionada === "descarga") {
+        let targetPeso = Math.round(pesoPromedio * 0.80);
+        let targetReps = Math.max(1, Math.round(repsPromedio * 0.75));
+        let targetRIR = 3; 
+
+        htmlProxima = `
+            <strong style="color: #3b82f6; font-size: 1.05rem;">Fase de Descarga</strong><br>
+            Para reducir la fatiga acumulada bajaremos el volumen total un 40%. Mantén <strong>${cantSeries} series</strong> con este objetivo liviano:<br><br>
+            Peso: <span class="stat-highlight">${targetPeso} kg</span> | 
+            Repeticiones: <span class="stat-highlight">${targetReps}</span> | 
+            RIR sugerido: <span class="stat-highlight">${targetRIR} a ${targetRIR + 1}</span>
+        `;
+    }
+
+    document.getElementById("proximaSesionResult").innerHTML = htmlProxima;
 
     actualizarInterfazResultados();
 }
