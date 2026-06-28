@@ -70,6 +70,16 @@ h1{
     color:white;
 }
 
+select.input-main{
+    appearance:none;
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,.7)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 14px center;
+    padding-right:40px;
+}
+
 .input-main::placeholder{
     color:rgba(255,255,255,.7);
 }
@@ -149,6 +159,11 @@ button{
 
 .btn-calc{
     background:#3a82fe;
+    color:white;
+}
+
+.btn-save{
+    background:#8b5cf6;
     color:white;
 }
 
@@ -333,12 +348,98 @@ img{
 .intro strong {
     color: #fff;
 }
+
+.navbar{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    margin-bottom:20px;
+    position:relative;
+}
+
+.nav-links{
+    display:flex;
+    gap:8px;
+}
+
+.nav-links a{
+    padding:8px 16px;
+    border-radius:10px;
+    color:rgba(255,255,255,.7);
+    text-decoration:none;
+    font-size:0.9rem;
+    font-weight:600;
+    transition:.25s;
+}
+
+.nav-links a:hover,
+.nav-links a.nav-active{
+    background:rgba(255,255,255,.12);
+    color:#fff;
+}
+
+.hamburger{
+    display:none;
+    flex-direction:column;
+    justify-content:center;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:8px;
+}
+
+.hamburger span{
+    display:block;
+    width:24px;
+    height:2px;
+    background:rgba(255,255,255,.8);
+    border-radius:2px;
+    transition:.3s;
+}
+
+@media(max-width:600px){
+    .hamburger{
+        display:flex;
+    }
+
+    .nav-links{
+        display:none;
+        flex-direction:column;
+        position:absolute;
+        top:100%;
+        right:0;
+        background:rgba(15,23,42,.95);
+        border:1px solid rgba(255,255,255,.15);
+        border-radius:12px;
+        padding:12px;
+        min-width:160px;
+        z-index:100;
+    }
+
+    .nav-links.open{
+        display:flex;
+    }
+}
+
 </style>
 </head>
 
 <body>
 
 <div class="container">
+
+    <nav class="navbar">
+        <button class="hamburger" onclick="toggleNav()" aria-label="Menú">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html" class="nav-active">Calculadora</a>
+            <a href="progresion.html">Progresión</a>
+        </div>
+    </nav>
 
     <div class="title">
         <img src="favicon.svg" alt="Icono del sitio" onerror="this.style.display='none'">
@@ -361,9 +462,12 @@ img{
 
     <input
         type="text"
+        id="ejercicioNombre"
         class="input-main"
+        list="ejerciciosList"
         placeholder="Ej: Press banca, Sentadilla, Peso muerto..."
     >
+    <datalist id="ejerciciosList"></datalist>
 
     <div class="section-title">
         Series realizadas
@@ -451,11 +555,19 @@ img{
             <div id="proximaSesionResult" class="next-session-box">
                 </div>
         </div>
+
+        <button id="btnGuardar" class="btn-save" onclick="guardarEnLocalStorage()" style="display:none; margin-top: 20px; width: 100%;">
+            Guardar
+        </button>
     </div>
 
 </div>
 
 <script>
+
+function toggleNav(){
+    document.getElementById('navLinks').classList.toggle('open');
+}
 
 const lista = document.getElementById("seriesList");
 const resultCard = document.getElementById("resultCard");
@@ -481,6 +593,7 @@ function crearSerie(numero){
 function agregarSerie(){
     const cantidad = document.querySelectorAll(".serie").length + 1;
     lista.appendChild(crearSerie(cantidad));
+    guardarEstadoFormulario();
 }
 
 function eliminarSerie(){
@@ -488,6 +601,7 @@ function eliminarSerie(){
     if(series.length > 1){
         series[series.length - 1].remove();
     }
+    guardarEstadoFormulario();
 }
 
 function calcularProgresion() {
@@ -590,6 +704,8 @@ function actualizarInterfazResultados() {
         resultCard.classList.add('show');
     }, 10);
 
+    document.getElementById('btnGuardar').style.display = 'block';
+
     document.getElementById('volumenTot').textContent = `${volumen.toFixed(1)} kg`;
     document.getElementById('volumenEst').textContent = `${volumenV.toFixed(1)} kg`;
     document.getElementById('maxOneRM').textContent = `${maxEOneRM.toFixed(1)} kg`;
@@ -627,10 +743,138 @@ function actualizarInterfazResultados() {
     gaugeMask.style.width = `${maskWidth}%`;
 }
 
-// Inicializar con 4 series
-for(let i=1;i<=4;i++){
-    agregarSerie();
+function guardarEnLocalStorage() {
+    const nombreEjercicio = document.getElementById('ejercicioNombre').value.trim();
+    if (!nombreEjercicio) {
+        alert('Por favor ingresa el nombre del ejercicio antes de guardar.');
+        return;
+    }
+
+    const series = document.querySelectorAll(".serie");
+    const seriesData = [...series].map(serie => {
+        const inputs = serie.querySelectorAll("input");
+        const select = serie.querySelector("select");
+        const peso = Number(inputs[0].value) || 0;
+        const reps = Number(inputs[1].value) || 0;
+        const valor = Number(inputs[2].value) || 0;
+        const RIR = (select.value === "RIR") ? valor : (10 - valor);
+        return {
+            peso,
+            unidad: 'kg',
+            repeticiones: reps,
+            rir: RIR
+        };
+    });
+
+    const historial = {
+        fecha: new Date().toISOString().split('T')[0],
+        volumenTotal: volumen,
+        volumenEstimado: volumenV,
+        oneRMMax: maxEOneRM,
+        oneRMPromedio: promEOneRM,
+        intensidadPromedio: intensidadPromPonderada,
+        series: seriesData
+    };
+
+    let data = JSON.parse(localStorage.getItem('workoutData') || '[]');
+
+    let ejercicio = data.find(e => e.nombre === nombreEjercicio);
+    if (ejercicio) {
+        ejercicio.historial.push(historial);
+    } else {
+        data.push({
+            nombre: nombreEjercicio,
+            historial: [historial]
+        });
+    }
+
+    localStorage.setItem('workoutData', JSON.stringify(data));
+    alert('Datos guardados correctamente.');
 }
+
+function cargarEjercicios() {
+    const datalist = document.getElementById('ejerciciosList');
+    const data = JSON.parse(localStorage.getItem('workoutData') || '[]');
+    data.forEach(e => {
+        const option = document.createElement('option');
+        option.value = e.nombre;
+        datalist.appendChild(option);
+    });
+}
+
+function guardarEstadoFormulario() {
+    const series = document.querySelectorAll(".serie");
+    const seriesData = [...series].map(serie => {
+        const inputs = serie.querySelectorAll("input");
+        const select = serie.querySelector("select");
+        return {
+            peso: inputs[0].value,
+            reps: inputs[1].value,
+            tipoValor: select.value,
+            valor: inputs[2].value
+        };
+    });
+
+    const estado = {
+        ejercicioNombre: document.getElementById('ejercicioNombre').value,
+        fase: document.getElementById('faseProximaSesion').value,
+        series: seriesData
+    };
+
+    localStorage.setItem('formBorrador', JSON.stringify(estado));
+}
+
+function restaurarEstadoFormulario() {
+    const saved = localStorage.getItem('formBorrador');
+    if (!saved) return false;
+
+    try {
+        const estado = JSON.parse(saved);
+        if ( (estado.ejercicioNombre || '') === '')
+        return false;
+
+        document.getElementById('ejercicioNombre').value = estado.ejercicioNombre || '';
+
+        if (estado.fase) {
+            document.getElementById('faseProximaSesion').value = estado.fase;
+        }
+
+        if (estado.series && estado.series.length > 0) {
+            document.querySelectorAll(".serie").forEach(s => s.remove());
+
+            estado.series.forEach((s, i) => {
+                const fila = document.createElement("div");
+                fila.className = "serie";
+                fila.innerHTML = `
+                    <input type="number" placeholder="Serie ${i + 1} - Peso (kg)" value="${s.peso || ''}">
+                    <input type="number" placeholder="Repeticiones" value="${s.reps || ''}">
+                    <select>
+                        <option value="RIR" ${s.tipoValor === 'RIR' ? 'selected' : ''}>RIR</option>
+                        <option value="RPE" ${s.tipoValor === 'RPE' ? 'selected' : ''}>RPE</option>
+                    </select>
+                    <input type="number" placeholder="Valor" min="0" max="10" step="0.5" value="${s.valor || ''}">
+                `;
+                lista.appendChild(fila);
+            });
+        }
+        return true;
+    } catch (e) {
+        // Ignorar estado corrupto
+    }
+    return false;
+}
+
+cargarEjercicios();
+
+// Restaurar estado guardado o inicializar con 4 series default
+if (!restaurarEstadoFormulario()) {
+    for(let i=1;i<=4;i++){
+        agregarSerie();
+    }
+}
+
+document.querySelector('.container').addEventListener('input', guardarEstadoFormulario);
+document.querySelector('.container').addEventListener('change', guardarEstadoFormulario);
 
 </script>
 
